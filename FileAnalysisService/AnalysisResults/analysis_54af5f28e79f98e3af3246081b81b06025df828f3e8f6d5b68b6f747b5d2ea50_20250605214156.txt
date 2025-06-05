@@ -1,0 +1,4 @@
+Word count: 342
+Character count: 1772
+Lines: 43
+You can find Word Cloud of this file in /analysis/word-cloud/{id}

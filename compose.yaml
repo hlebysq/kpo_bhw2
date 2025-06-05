@@ -1,0 +1,60 @@
+﻿version: '3.8'
+
+services:
+  api-gateway:
+    restart: on-failure:5
+    build:
+      context: .
+      dockerfile: ApiGateway/Dockerfile
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - file-storing-service
+      - file-analysis-service
+    networks:
+      - backend
+
+  file-storing-service:
+    restart: on-failure:5
+    build:
+      context: .
+      dockerfile: FileStoringService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__SqliteConnection=Data Source=/data/filestorage.db
+      - FileStorage__UploadPath=/app/uploads
+    volumes:
+      - filestorage-data:/app/uploads
+      - filestorage-db:/data
+    networks:
+      - backend
+
+  file-analysis-service:
+    restart: on-failure:5
+    build:
+      context: .
+      dockerfile: FileAnalysisService/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__SqliteConnection=Data Source=/data/analysisservice.db
+      - FileStorage__UploadPath=/app/analysis-results
+      - Services__FileStoringService=http://file-storing-service
+    volumes:
+      - analysis-results-data:/app/analysis-results
+      - analysis-db:/data
+    depends_on:
+      - file-storing-service
+    networks:
+      - backend
+
+volumes:
+  filestorage-data:
+  filestorage-db:
+  analysis-results-data:
+  analysis-db:
+
+networks:
+  backend:
+    driver: bridge
